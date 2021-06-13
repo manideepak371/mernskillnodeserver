@@ -34,7 +34,7 @@ Router
     headers.SetResHeaders(req,res);
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end("Unable to fetch data")
+            res.end(err)
         }
         else{
             var dbo=db.db("players");
