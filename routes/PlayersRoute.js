@@ -7,6 +7,7 @@ var URL=require('url')
 var formidable=require('formidable')
 var fs=require('fs')
 var path=require('path')
+var mongo_url="mongodb+srv://onlyuser:<mern_skill>@cluster0.4vkfd.mongodb.net/players?retryWrites=true&w=majority"
 
 var headers={
     SetResHeaders: function(req,res){
@@ -31,8 +32,7 @@ async function findone(dbo,id,req){
 Router
 .get(['/getPlayers'],function(req,res,next){
     headers.SetResHeaders(req,res);
-    var url="mongodb://localhost"
-    mongo.connect(url,function(err,db){
+    mongo.connect(mongo_url,function(err,db){
         if(err){
             res.end("Unable to fetch data")
         }
@@ -52,13 +52,13 @@ Router
 })
 .post(['/addPlayer',],function(req,res,next){
     headers.SetResHeaders(req,res);
-    var url="mongodb://localhost"
+    //var url="mongodb://localhost"
     var form=new formidable.IncomingForm()
     form.parse(req,function(err,fields,files){
         var playerdata=[]
         playerdata.push(JSON.parse(fields.playerdata))
         if(playerdata.length >0 ){
-            mongo.connect(url,function(err,db){
+            mongo.connect(mongo_url,function(err,db){
                 if(err){
                     res.end("Unable to add player in db")
                 }
@@ -113,8 +113,8 @@ Router
 })
 .post('/AddToLog',function(req,res,next){
     headers.SetResHeaders(req,res);
-    var url="mongodb://localhost/"
-    mongo.connect(url,function(err,db){
+    //var url="mongodb://localhost/"
+    mongo.connect(mongo_url,function(err,db){
         if(err){
             res.end("Error while connecting db")
         }
@@ -135,8 +135,8 @@ Router
 })
 .get('/GetLog',function(req,res,next){
     headers.SetResHeaders(req,res)
-    var url="mongodb://localhost/"
-    mongo.connect(url,function(err,db){
+    //var mongo_url="mongodb://localhost/"
+    mongo.connect(mongo_url,function(err,db){
         if(err){
             res.end("Error while connecting to db")
         }
@@ -156,7 +156,7 @@ Router
 })
 .post(['/updatePlayer'],function(req,res,next){
     headers.SetResHeaders(req,res)
-    mongo.connect("mongodb://localhost",function(err,db){
+    mongo.connect(mongo_url,function(err,db){
         if(err){
             res.end("Unable to Update Player")
         }
@@ -204,7 +204,7 @@ Router
 })
 .get('/getPlayer', function(req,res,next){
     headers.SetResHeaders(req,res);
-    mongo.connect("mongodb://localhost",function(err,db){
+    mongo.connect(mongo_url,function(err,db){
         if(err){
             res.end("Unable to retirieve player data")
         }
