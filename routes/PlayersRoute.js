@@ -138,7 +138,7 @@ Router
     //var mongo_url="mongodb://localhost/"
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end("Error while connecting to db")
+            res.end(JSON.stringify(err))
         }
         else{
             var dbo=db.db("players")
