@@ -7,7 +7,7 @@ var URL=require('url')
 var formidable=require('formidable')
 var fs=require('fs')
 var path=require('path')
-var mongo_url="mongodb+srv://onlyuser:<mern_skill>@cluster0.4vkfd.mongodb.net/players?retryWrites=true&w=majority"
+var mongo_url="mongodb+srv://onlyuser:mern_skill@cluster0.4vkfd.mongodb.net"
 
 var headers={
     SetResHeaders: function(req,res){
