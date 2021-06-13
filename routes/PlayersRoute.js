@@ -34,7 +34,8 @@ Router
     headers.SetResHeaders(req,res);
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end(err)
+            console.log(err)
+            res.end("Error connecting to db")
         }
         else{
             var dbo=db.db("players");
@@ -60,6 +61,7 @@ Router
         if(playerdata.length >0 ){
             mongo.connect(mongo_url,function(err,db){
                 if(err){
+                    console.log(err)
                     res.end("Unable to add player in db")
                 }
                 else{
@@ -116,7 +118,8 @@ Router
     //var url="mongodb://localhost/"
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end("Error while connecting db")
+            console.log(err)
+            res.end("Error connecting to db")
         }
         else{
             var dbo=db.db("players")
@@ -138,7 +141,8 @@ Router
     //var mongo_url="mongodb://localhost/"
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end(JSON.stringify(err))
+            console.log(err)
+            res.end("Error connecting to db")
         }
         else{
             var dbo=db.db("players")
@@ -158,6 +162,7 @@ Router
     headers.SetResHeaders(req,res)
     mongo.connect(mongo_url,function(err,db){
         if(err){
+            console.log(err)
             res.end("Unable to Update Player")
         }
         else{
@@ -206,7 +211,8 @@ Router
     headers.SetResHeaders(req,res);
     mongo.connect(mongo_url,function(err,db){
         if(err){
-            res.end("Unable to retirieve player data")
+            console.log(err)
+            res.end("Unable to retirieve player data from db")
         }
         else{
             const dbo=db.db("players")
