@@ -7,7 +7,12 @@ var URL=require('url')
 var formidable=require('formidable')
 var fs=require('fs')
 var path=require('path')
-var mongo_url="mongodb+srv://onlyuser:mern_skill@cluster0.4vkfd.mongodb.net"
+var mongo_url="mongodb://localhost"
+
+
+let dup_flag=false
+let success_flag=false
+let bulkuploadresponse=null
 
 var headers={
     SetResHeaders: function(req,res){
@@ -28,6 +33,44 @@ async function findone(dbo,id,req){
     dbo.collection("players_document").deleteOne({_id:req.body._id})   
 }
 
+function addplayer(mongo_url,database,collection,data,callback){
+    mongo.connect(mongo_url,function(err,db){
+        if(err){
+            callback("Unable to connect to mongo")         
+        }
+        else{
+            var dbo=db.db(database);
+            var req_obj=data
+            if(req_obj){
+                var query={_id:req_obj._id}
+                dbo.collection(collection).find(query).toArray(function(err,result){
+                    if(err){
+                        callback("error in finding the duplicate player")
+                    }
+                    else{
+                        if(result.length === 1){
+                            db.close()
+                            callback("duplicate")
+                        }
+                        else{
+                            dbo.collection(collection).insertOne(req_obj,function(err,result){
+                                if(err){
+                                    callback("Unable to add new player to the collection")
+                                }
+                                else{
+                                    if(result.insertedCount === 1){
+                                        db.close()
+                                        callback("success")
+                                    }
+                                }
+                            })
+                        }
+                    }
+                })
+            }       
+        }
+    })
+}
 
 Router
 .get(['/getPlayers'],function(req,res,next){
@@ -59,61 +102,24 @@ Router
         var playerdata=[]
         playerdata.push(JSON.parse(fields.playerdata))
         if(playerdata.length >0 ){
-            mongo.connect(mongo_url,function(err,db){
-                if(err){
-                    console.log(err)
-                    res.end("Unable to add player in db")
-                }
-                else{
-                    var dbo=db.db("players");
-                    var req_obj=playerdata[0]
-                    if(req_obj){
-                        var query={_id:req_obj._id}
-                        dbo.collection("players_document").find(query).toArray(function(err,result){
-                            if(err){
-                                res.end("Unable to add player in document")
-                            }
-                            else{
-                                if(result.length === 1){
-                                    res.end("duplicate")
-                                    db.close()
-                                }
-                                else{
-                                    dbo.collection("players_document").insertOne(req_obj,function(err,result){
-                                        if(err){
-                                            res.end("Unable to add player in document")
-                                        }
-                                        else{
-                                            if(result.insertedCount === 1){
-                                                res.end("success")
-                                                db.close()
-                                                var new_path='../serverpracticereact/playerimages'
-                                                if(!fs.existsSync(new_path)){
-                                                    fs.mkdir('../serverpracticereact/playerimages')
-                                                }
-                                                var old_path=files.playerimage.path
-                                                fs.readFile(old_path,function(err,data){
-                                                    fs.writeFile(new_path+'/'+playerdata[0]._id+".png",data,function(err){
-                                                        //
-                                                    })
-                                                })
-                                            }
-                                        }
-                                    })
-                                }
-                            }
-                        })
-                    
-                    }        
-                }
-            })
+            const addplayerReturn=addplayer(mongo_url,"players","players_document",playerdata[0])
+            console.log(addplayerReturn)
+            if(addplayerReturn === "duplicate"){
+                res.end("duplicate")
+                return
+            }
+            if(addplayerReturn === "success")
+            {
+                res.end("success")
+                return
+            }
         }
         else{
-            res.end("Error while adding player")
+            res.end("No player data to read from")
         }
     })
 })
-.post('/AddToLog',function(req,res,next){
+.post('/AddToLog',function(req,res,next){   
     headers.SetResHeaders(req,res);
     //var url="mongodb://localhost/"
     mongo.connect(mongo_url,function(err,db){
@@ -124,12 +130,23 @@ Router
         else{
             var dbo=db.db("players")
             var req_obj=req.body
-            dbo.collection("PlayersChangeLog").insertOne(req_obj,function(err,result){
-                if(err || result.insertedCount !== 1){
+            console.log(req.body)
+            var Log=req.body
+            dbo.collection("PlayersChangeLog").insertOne(Log,function(err,result){
+                if(err){
+                    console.log(err)
                     res.end("error while updating changelog")
+                    return
                 }
                 else{
-                    res.end("Change Log Updated")
+                    if(result.insertedCount !== 1){
+                        res.end("Unable to update Change Log")
+                        return
+                    }
+                    else{
+                        res.end("Change Log Updated")
+                        return
+                    }
                 }
             })
             db.close()
@@ -203,9 +220,61 @@ Router
         }
     })
 })
-.get(['/searchPlayer'],function(req,res,next){
+.post(['/uploadBulk'],function(req,res,next){
     headers.SetResHeaders(req,res);
-    const query=req.body.playerName
+    var form=new formidable.IncomingForm()
+    form.parse(req,function(err,fields,files){
+        if(err){
+            var x={uploaded:false}
+            console.log(err)
+            res.end(JSON.stringify(x))
+            return
+        }
+        const data=JSON.parse(fields.filedata)
+        console.log(fields)
+        if(data.length>0){
+            data.map(doc =>{    
+                addplayer(mongo_url,"players","players_document",doc,function(response){
+                    console.log(response)
+                    if(response === "duplicate"){
+                        dup_flag=true
+                    }
+                    if(response === "success")
+                    {
+                        success_flag=true
+                    }
+                    
+                })
+            })
+            setTimeout(()=>{
+                if(dup_flag && !success_flag){
+                    console.log("All duplicates")
+                    res.end("duplicate")
+                    dup_flag=false
+                    success_flag=false
+                    return
+                }
+                if(!dup_flag && success_flag){
+                    console.log("success")
+                    res.end("success")
+                    dup_flag=false
+                    success_flag=false
+                    return
+                }
+                if(dup_flag && success_flag){
+                    console.log("Partial duplicates")
+                    res.end("partial")
+                    dup_flag=false
+                    success_flag=false
+                    return
+                }       
+            },200) 
+        }
+        else{
+            res.end("No data to read from")
+            return
+        }
+    })    
 })
 .get('/getPlayer', function(req,res,next){
     headers.SetResHeaders(req,res);
@@ -231,7 +300,6 @@ Router
         }
     })
 })
-
 
 
 module.exports=Router
