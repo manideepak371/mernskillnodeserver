@@ -7,7 +7,7 @@ var URL=require('url')
 var formidable=require('formidable')
 var fs=require('fs')
 var path=require('path')
-var mongo_url="mongodb://localhost"
+var mongo_url="mongodb+srv://onlyuser:root@cluster0.4vkfd.mongodb.net/players?retryWrites=true&w=majority"
 
 
 let dup_flag=false
